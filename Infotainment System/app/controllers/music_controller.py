@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Final
 
-from PySide6.QtCore import QObject, Property, QUrl, Signal, Slot
-from PySide6.QtMultimedia import QAudioOutput, QMediaPlayer
+from PyQt6.QtCore import QObject, pyqtProperty, QUrl, pyqtSignal, pyqtSlot
+from PyQt6.QtMultimedia import QAudioOutput, QMediaPlayer
 
 
 class MusicController(QObject):
@@ -14,14 +14,14 @@ class MusicController(QObject):
     QML calls the public slots and reads the exposed properties.
     """
 
-    songChanged = Signal()
-    playlistChanged = Signal()
-    playbackChanged = Signal()
-    statusChanged = Signal()
-    volumeChanged = Signal()
-    positionChanged = Signal()
-    durationChanged = Signal()
-    errorChanged = Signal()
+    songChanged = pyqtSignal()
+    playlistChanged = pyqtSignal()
+    playbackChanged = pyqtSignal()
+    statusChanged = pyqtSignal()
+    volumeChanged = pyqtSignal()
+    positionChanged = pyqtSignal()
+    durationChanged = pyqtSignal()
+    errorChanged = pyqtSignal()
 
     DEFAULT_VOLUME: Final[float] = 0.70
 
@@ -73,75 +73,75 @@ class MusicController(QObject):
     # Properties exposed to QML
     # ---------------------------------------------------------
 
-    @Property(str, notify=songChanged)
+    @pyqtProperty(str, notify=songChanged)
     def currentTitle(self) -> str:
         if not self._has_current_song():
             return "No song selected"
 
         return self._song_paths[self._current_index].stem
 
-    @Property(str, notify=songChanged)
+    @pyqtProperty(str, notify=songChanged)
     def currentFileName(self) -> str:
         if not self._has_current_song():
             return ""
 
         return self._song_paths[self._current_index].name
 
-    @Property(int, notify=songChanged)
+    @pyqtProperty(int, notify=songChanged)
     def currentIndex(self) -> int:
         return self._current_index
 
-    @Property(int, notify=playlistChanged)
+    @pyqtProperty(int, notify=playlistChanged)
     def songCount(self) -> int:
         return len(self._song_paths)
 
-    @Property("QStringList", notify=playlistChanged)
+    @pyqtProperty("QStringList", notify=playlistChanged)
     def songTitles(self) -> list[str]:
         return [song.stem for song in self._song_paths]
 
-    @Property(bool, notify=playbackChanged)
+    @pyqtProperty(bool, notify=playbackChanged)
     def isPlaying(self) -> bool:
         return (
             self._player.playbackState()
             == QMediaPlayer.PlaybackState.PlayingState
         )
 
-    @Property(bool, notify=playbackChanged)
+    @pyqtProperty(bool, notify=playbackChanged)
     def isPaused(self) -> bool:
         return (
             self._player.playbackState()
             == QMediaPlayer.PlaybackState.PausedState
         )
 
-    @Property(bool, notify=playlistChanged)
+    @pyqtProperty(bool, notify=playlistChanged)
     def hasSongs(self) -> bool:
         return bool(self._song_paths)
 
-    @Property(str, notify=statusChanged)
+    @pyqtProperty(str, notify=statusChanged)
     def status(self) -> str:
         return self._status
 
-    @Property(str, notify=errorChanged)
+    @pyqtProperty(str, notify=errorChanged)
     def errorMessage(self) -> str:
         return self._error_message
 
-    @Property(int, notify=volumeChanged)
+    @pyqtProperty(int, notify=volumeChanged)
     def volume(self) -> int:
         return round(self._audio_output.volume() * 100)
 
-    @Property(int, notify=positionChanged)
+    @pyqtProperty(int, notify=positionChanged)
     def position(self) -> int:
         return int(self._player.position())
 
-    @Property(int, notify=durationChanged)
+    @pyqtProperty(int, notify=durationChanged)
     def duration(self) -> int:
         return int(self._player.duration())
 
-    @Property(str, notify=positionChanged)
+    @pyqtProperty(str, notify=positionChanged)
     def formattedPosition(self) -> str:
         return self._format_milliseconds(self._player.position())
 
-    @Property(str, notify=durationChanged)
+    @pyqtProperty(str, notify=durationChanged)
     def formattedDuration(self) -> str:
         return self._format_milliseconds(self._player.duration())
 
@@ -149,7 +149,7 @@ class MusicController(QObject):
     # Slots called from QML
     # ---------------------------------------------------------
 
-    @Slot()
+    @pyqtSlot()
     def scan_songs(self) -> None:
         """
         Scan the assets/songs directory and rebuild the playlist.
@@ -200,7 +200,7 @@ class MusicController(QObject):
         self.songChanged.emit()
         self.playbackChanged.emit()
 
-    @Slot()
+    @pyqtSlot()
     def play(self) -> None:
         if not self._ensure_song_available():
             return
@@ -214,7 +214,7 @@ class MusicController(QObject):
 
         self._player.play()
 
-    @Slot()
+    @pyqtSlot()
     def pause(self) -> None:
         if not self._ensure_song_available():
             return
@@ -222,14 +222,14 @@ class MusicController(QObject):
         if self.isPlaying:
             self._player.pause()
 
-    @Slot()
+    @pyqtSlot()
     def toggle_play_pause(self) -> None:
         if self.isPlaying:
             self.pause()
         else:
             self.play()
 
-    @Slot()
+    @pyqtSlot()
     def stop(self) -> None:
         self._player.stop()
 
@@ -240,7 +240,7 @@ class MusicController(QObject):
 
         self.playbackChanged.emit()
 
-    @Slot()
+    @pyqtSlot()
     def next_song(self) -> None:
         if not self._ensure_song_available():
             return
@@ -253,7 +253,7 @@ class MusicController(QObject):
         self.songChanged.emit()
         self._player.play()
 
-    @Slot()
+    @pyqtSlot()
     def previous_song(self) -> None:
         if not self._ensure_song_available():
             return
@@ -266,7 +266,7 @@ class MusicController(QObject):
         self.songChanged.emit()
         self._player.play()
 
-    @Slot(int)
+    @pyqtSlot(int)
     def select_song(self, index: int) -> None:
         if index < 0 or index >= len(self._song_paths):
             self._set_error("The selected song number is invalid.")
@@ -277,13 +277,13 @@ class MusicController(QObject):
         self.songChanged.emit()
         self._player.play()
 
-    @Slot(int)
+    @pyqtSlot(int)
     def set_volume(self, volume_percentage: int) -> None:
         safe_volume = max(0, min(volume_percentage, 100))
         self._audio_output.setVolume(safe_volume / 100.0)
         self.volumeChanged.emit()
 
-    @Slot(int)
+    @pyqtSlot(int)
     def set_position(self, position_milliseconds: int) -> None:
         safe_position = max(
             0,
@@ -295,7 +295,6 @@ class MusicController(QObject):
     # Internal player handlers
     # ---------------------------------------------------------
 
-    @Slot(QMediaPlayer.PlaybackState)
     def _handle_playback_state_changed(
         self,
         state: QMediaPlayer.PlaybackState,
@@ -313,7 +312,6 @@ class MusicController(QObject):
 
         self.playbackChanged.emit()
 
-    @Slot(QMediaPlayer.MediaStatus)
     def _handle_media_status_changed(
         self,
         media_status: QMediaPlayer.MediaStatus,
@@ -328,27 +326,44 @@ class MusicController(QObject):
         elif media_status == QMediaPlayer.MediaStatus.EndOfMedia:
             self.next_song()
 
-    @Slot(int)
-    def _handle_position_changed(self, _position: int) -> None:
+    def _handle_position_changed(
+        self,
+        _position,
+    ) -> None:
+
         self.positionChanged.emit()
 
-    @Slot(int)
-    def _handle_duration_changed(self, _duration: int) -> None:
+
+    def _handle_duration_changed(
+        self,
+        _duration,
+    ) -> None:
+
         self.durationChanged.emit()
 
-    @Slot(QMediaPlayer.Error, str)
     def _handle_error(
         self,
-        error: QMediaPlayer.Error,
-        error_string: str,
-    ) -> None:
+        error
+    ):
+
+        error_string = self._player.errorString()
+
         if error == QMediaPlayer.Error.NoError:
             self._clear_error()
             return
 
-        readable_error = error_string.strip() or "Unknown media error"
-        self._set_error(readable_error)
-        self._set_status("Playback error")
+        readable_error = error_string.strip()
+
+        if not readable_error:
+            readable_error = "Unknown media error"
+
+        self._set_error(
+            readable_error
+        )
+
+        self._set_status(
+            "Playback error"
+        )
 
     # ---------------------------------------------------------
     # Internal helper methods
